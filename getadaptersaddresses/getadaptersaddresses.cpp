@@ -3,18 +3,22 @@
 
 #include "stdafx.h"
 #include <winsock2.h>
+#include <Ws2tcpip.h>
 #include <iphlpapi.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// Link with Iphlpapi.lib
+// Link with Iphlpapi.lib, Ws2_32.lib
 #pragma comment(lib, "IPHLPAPI.lib")
+#pragma comment(lib, "Ws2_32.lib")
 
 #define WORKING_BUFFER_SIZE 15000
 #define MAX_TRIES 3
 
 #define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
 #define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
+
+void PrintIPAddress(LPSOCKADDR lpSockAddr);
 
 /* Note: could also use malloc() and free() */
 
@@ -106,8 +110,12 @@ int __cdecl main(int argc, char **argv)
 
 			pUnicast = pCurrAddresses->FirstUnicastAddress;
 			if (pUnicast != NULL) {
+				printf("\tUnicast Addresses\n");
 				for (i = 0; pUnicast != NULL; i++)
+				{
+					PrintIPAddress((*pUnicast).Address.lpSockaddr);
 					pUnicast = pUnicast->Next;
+				}
 				printf("\tNumber of Unicast Addresses: %d\n", i);
 			}
 			else
@@ -115,8 +123,12 @@ int __cdecl main(int argc, char **argv)
 
 			pAnycast = pCurrAddresses->FirstAnycastAddress;
 			if (pAnycast) {
+				printf("\tAnycast Addresses\n");
 				for (i = 0; pAnycast != NULL; i++)
+				{
+					PrintIPAddress((*pAnycast).Address.lpSockaddr);
 					pAnycast = pAnycast->Next;
+				}
 				printf("\tNumber of Anycast Addresses: %d\n", i);
 			}
 			else
@@ -124,8 +136,12 @@ int __cdecl main(int argc, char **argv)
 
 			pMulticast = pCurrAddresses->FirstMulticastAddress;
 			if (pMulticast) {
+				printf("\tMulticast Addresses\n");
 				for (i = 0; pMulticast != NULL; i++)
+				{
+					PrintIPAddress((*pMulticast).Address.lpSockaddr);
 					pMulticast = pMulticast->Next;
+				}
 				printf("\tNumber of Multicast Addresses: %d\n", i);
 			}
 			else
@@ -133,8 +149,12 @@ int __cdecl main(int argc, char **argv)
 
 			pDnServer = pCurrAddresses->FirstDnsServerAddress;
 			if (pDnServer) {
+				printf("\tDNSServer Addresses\n");
 				for (i = 0; pDnServer != NULL; i++)
+				{
+					PrintIPAddress((*pDnServer).Address.lpSockaddr);
 					pDnServer = pDnServer->Next;
+				}
 				printf("\tNumber of DNS Server Addresses: %d\n", i);
 			}
 			else
@@ -196,7 +216,7 @@ int __cdecl main(int argc, char **argv)
 				NULL, dwRetVal, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 				// Default language
 				(LPTSTR)& lpMsgBuf, 0, NULL)) {
-				printf("\tError: %s", lpMsgBuf);
+				printf("\tError: %s", (char*)lpMsgBuf);
 				LocalFree(lpMsgBuf);
 				if (pAddresses)
 					FREE(pAddresses);
@@ -210,4 +230,27 @@ int __cdecl main(int argc, char **argv)
 	}
 
 	return 0;
+}
+
+void PrintIPAddress(LPSOCKADDR lpSockAddr)
+{
+	char *s = NULL;
+	switch (lpSockAddr->sa_family) {
+	case AF_INET: {
+		struct sockaddr_in *addr_in = (struct sockaddr_in *)lpSockAddr;
+		s = (char*)malloc(INET_ADDRSTRLEN);
+		inet_ntop(AF_INET, &(addr_in->sin_addr), s, INET_ADDRSTRLEN);
+		break;
+	}
+	case AF_INET6: {
+		struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)lpSockAddr;
+		s = (char*)malloc(INET6_ADDRSTRLEN);
+		inet_ntop(AF_INET6, &(addr_in6->sin6_addr), s, INET6_ADDRSTRLEN);
+		break;
+	}
+	default:
+		break;
+	}
+	printf("\t\t%s\n", s);
+	free(s);
 }
