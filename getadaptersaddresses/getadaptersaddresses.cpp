@@ -33,7 +33,14 @@ int __cdecl main(int argc, char **argv)
 	unsigned int i = 0;
 
 	// Set the flags to pass to GetAdaptersAddresses
-	ULONG flags = GAA_FLAG_INCLUDE_PREFIX;
+
+	/* GAA_FLAG_INCLUDE_ALL_INTERFACES
+		0x0100
+		Return addresses for all NDIS interfaces.
+		This flag is supported on Windows Vistaand later.
+	*/
+
+	ULONG flags = GAA_FLAG_INCLUDE_PREFIX| GAA_FLAG_INCLUDE_ALL_INTERFACES;
 
 	// default to unspecified address family (both)
 	ULONG family = AF_UNSPEC;
